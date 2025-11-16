@@ -1,0 +1,13 @@
+{
+    "name": "com.yanicksenn.selectionhistory",
+    "version": "1.0.0",
+    "displayName": "Selection History",
+    "description": "This package contains a plugin that tracks your Unity selection history.",
+    "unity": "6000.0",
+    "unityRelease": "51f1",
+    "author": {
+        "name": "Yanick Senn",
+        "email": "info@yanicksenn.com",
+        "url": ""
+    }
+}
