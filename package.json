@@ -1,6 +1,6 @@
 {
   "name": "com.yanicksenn.selectionhistory",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "displayName": "Selection History",
   "description": "This package contains a plugin that tracks your Unity selection history.",
   "unity": "6000.0",
