@@ -7,12 +7,16 @@ namespace YanickSenn.SelectionHistory.Editor
 {
     public class SelectionHistoryWindow : EditorWindow
     {
-        private const string HistorySizeKey = "YanickSenn.SelectionHistory.HistorySize";
-        private static int _historySize = 10;
-
-        private List<Object> _history = new List<Object>();
         private Vector2 _scrollPosition;
         private Object _selectedObjectInList;
+
+        private List<Object> History => SelectionHistoryState.instance.History;
+
+        private int HistorySize
+        {
+            get => SelectionHistoryState.instance.HistorySize;
+            set => SelectionHistoryState.instance.HistorySize = value;
+        }
 
         [MenuItem("Window/Selection History")]
         public static void ShowWindow()
@@ -22,7 +26,6 @@ namespace YanickSenn.SelectionHistory.Editor
 
         private void OnEnable()
         {
-            _historySize = EditorPrefs.GetInt(HistorySizeKey, 10);
             Selection.selectionChanged += OnSelectionChanged;
             _selectedObjectInList = null;
         }
@@ -38,16 +41,21 @@ namespace YanickSenn.SelectionHistory.Editor
             {
                 if (GUILayout.Button("Clear", EditorStyles.toolbarButton))
                 {
-                    _history.Clear();
+                    History.Clear();
+                    SelectionHistoryState.instance.SaveState();
                 }
 
                 GUILayout.FlexibleSpace();
 
                 EditorGUI.BeginChangeCheck();
-                _historySize = EditorGUILayout.IntField(_historySize, EditorStyles.toolbarTextField, GUILayout.Width(40));
+                HistorySize = EditorGUILayout.IntField(HistorySize, EditorStyles.toolbarTextField, GUILayout.Width(40));
                 if (EditorGUI.EndChangeCheck())
                 {
-                    EditorPrefs.SetInt(HistorySizeKey, _historySize);
+                    if (History.Count > HistorySize)
+                    {
+                        History.RemoveRange(HistorySize, History.Count - HistorySize);
+                    }
+                    SelectionHistoryState.instance.SaveState();
                 }
             }
 
@@ -61,13 +69,14 @@ namespace YanickSenn.SelectionHistory.Editor
                 GUILayout.Label("Type", GUILayout.Width(100));
             }
 
-            for (int i = 0; i < _history.Count; i++)
+            for (int i = 0; i < History.Count; i++)
             {
-                var obj = _history[i];
+                var obj = History[i];
                 if (obj == null)
                 {
-                    _history.RemoveAt(i);
+                    History.RemoveAt(i);
                     i--;
+                    SelectionHistoryState.instance.SaveState();
                     continue;
                 }
 
@@ -125,6 +134,7 @@ namespace YanickSenn.SelectionHistory.Editor
         private void OnSelectionChanged()
         {
             var currentSelection = Selection.objects;
+            bool changed = false;
             if (currentSelection.Length > 0)
             {
                 foreach (var obj in currentSelection)
@@ -134,24 +144,31 @@ namespace YanickSenn.SelectionHistory.Editor
                         continue;
                     }
 
-                    if (!_history.Contains(obj))
+                    if (!History.Contains(obj))
                     {
-                        _history.Insert(0, obj);
+                        History.Insert(0, obj);
+                        changed = true;
                     }
-                    else
+                    else if (History.IndexOf(obj) != 0)
                     {
-                        _history.Remove(obj);
-                        _history.Insert(0, obj);
+                        History.Remove(obj);
+                        History.Insert(0, obj);
+                        changed = true;
                     }
                 }
             }
             
-            if (_history.Count > _historySize)
+            if (History.Count > HistorySize)
             {
-                _history = _history.Take(_historySize).ToList();
+                History.RemoveRange(HistorySize, History.Count - HistorySize);
+                changed = true;
             }
 
-            Repaint();
+            if (changed)
+            {
+                SelectionHistoryState.instance.SaveState();
+                Repaint();
+            }
         }
     }
 }
