@@ -12,7 +12,6 @@ namespace YanickSenn.SelectionHistory.Editor
 
         private List<Object> _history = new List<Object>();
         private Vector2 _scrollPosition;
-        private GUIStyle _highlightStyle;
         private Object _selectedObjectInList;
 
         [MenuItem("Window/Selection History")]
@@ -26,12 +25,6 @@ namespace YanickSenn.SelectionHistory.Editor
             _historySize = EditorPrefs.GetInt(HistorySizeKey, 10);
             Selection.selectionChanged += OnSelectionChanged;
             _selectedObjectInList = null;
-
-            _highlightStyle = new GUIStyle();
-            var highlightTex = new Texture2D(1, 1);
-            highlightTex.SetPixel(0, 0, new Color(0.24f, 0.37f, 0.59f));
-            highlightTex.Apply();
-            _highlightStyle.normal.background = highlightTex;
         }
 
         private void OnDisable()
@@ -79,34 +72,35 @@ namespace YanickSenn.SelectionHistory.Editor
                 }
 
                 var icon = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(obj));
-                var style = (_selectedObjectInList == obj) ? _highlightStyle : GUIStyle.none;
-                
-                using (new EditorGUILayout.HorizontalScope(style))
-                {
-                    Rect rowRect = EditorGUILayout.GetControlRect(false, 20, GUILayout.ExpandWidth(true));
-                    GUI.Label(new Rect(rowRect.x, rowRect.y, 40, rowRect.height), new GUIContent(icon));
-                    GUI.Label(new Rect(rowRect.x + 40, rowRect.y, rowRect.width - 140, rowRect.height), obj.name);
-                    GUI.Label(new Rect(rowRect.x + rowRect.width - 100, rowRect.y, 100, rowRect.height), obj.GetType().Name);
 
-                    var currentEvent = Event.current;
-                    if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0 && rowRect.Contains(currentEvent.mousePosition))
+                Rect rowRect = EditorGUILayout.GetControlRect(false, 20, GUILayout.ExpandWidth(true));
+                if (_selectedObjectInList == obj)
+                {
+                    EditorGUI.DrawRect(rowRect, new Color(0.24f, 0.37f, 0.59f));
+                }
+
+                GUI.Label(new Rect(rowRect.x, rowRect.y, 40, rowRect.height), new GUIContent(icon));
+                GUI.Label(new Rect(rowRect.x + 40, rowRect.y, rowRect.width - 140, rowRect.height), obj.name);
+                GUI.Label(new Rect(rowRect.x + rowRect.width - 100, rowRect.y, 100, rowRect.height), obj.GetType().Name);
+
+                var currentEvent = Event.current;
+                if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0 && rowRect.Contains(currentEvent.mousePosition))
+                {
+                    if (currentEvent.clickCount == 1)
                     {
-                        if (currentEvent.clickCount == 1)
-                        {
-                            _selectedObjectInList = obj;
-                            Repaint();
-                            
-                            DragAndDrop.PrepareStartDrag();
-                            DragAndDrop.objectReferences = new[] { obj };
-                            DragAndDrop.SetGenericData("SelectionHistoryDrag", obj);
-                        }
-                        else if (currentEvent.clickCount == 2)
-                        {
-                            Selection.activeObject = obj;
-                            _selectedObjectInList = obj;
-                            EditorGUIUtility.PingObject(obj);
-                            Event.current.Use();
-                        }
+                        _selectedObjectInList = obj;
+                        Repaint();
+                        
+                        DragAndDrop.PrepareStartDrag();
+                        DragAndDrop.objectReferences = new[] { obj };
+                        DragAndDrop.SetGenericData("SelectionHistoryDrag", obj);
+                    }
+                    else if (currentEvent.clickCount == 2)
+                    {
+                        Selection.activeObject = obj;
+                        _selectedObjectInList = obj;
+                        EditorGUIUtility.PingObject(obj);
+                        Event.current.Use();
                     }
                 }
             }
